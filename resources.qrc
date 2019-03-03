@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/img">
+        <file>resources/building.png</file>
+        <file>resources/cctv.png</file>
+        <file>resources/megaphone.png</file>
+        <file>resources/weather.jpg</file>
+        <file>resources/weather.png</file>
+        <file>resources/dark.qss</file>
+    </qresource>
+</RCC>
