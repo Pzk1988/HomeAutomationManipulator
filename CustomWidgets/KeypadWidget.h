@@ -5,6 +5,7 @@
 #include <QGridLayout>
 #include <QVBoxLayout>
 #include <QLineEdit>
+#include <QTimer>
 
 #include "CustomWidgets/CustomTabWidget.h"
 #include "CustomWidgets/KeypadButton.h"
@@ -14,20 +15,27 @@ class KeypadWidget : public QWidget
     Q_OBJECT
 public:
     explicit KeypadWidget(QWidget *parent = nullptr);
+    virtual ~KeypadWidget() override {}
 
 private:
     QGridLayout* keyPadLayout;
     QVBoxLayout* mainLayout;
     KeypadButton* buttonTab[12];
     QLineEdit* passLineEdit;
-    QByteArray createHash(QString pin);
+    QTimer confirmHighlightTimer;
+    QString styleSheet;
+
+    void SetLayout();
+    void SetStyleSheet();
 
 signals:
+    void CodeEntered(QString code);
 
 private slots:
-    void keypadClicked(bool clicked);
-    void confirm(bool clicked);
-    void cancel(bool clicked);
+    void DigitClicked(bool clicked);
+    void ConfirmClicked(bool clicked);
+    void CancelClicked(bool clicked);
+    void ConfirmTimeout();
 
 protected:
     void paintEvent(QPaintEvent *event) override;

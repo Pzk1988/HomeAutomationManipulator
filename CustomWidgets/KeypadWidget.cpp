@@ -13,6 +13,12 @@
 
 KeypadWidget::KeypadWidget(QWidget *parent) : QWidget(parent)
 {
+    SetLayout();
+    SetStyleSheet();
+}
+
+void KeypadWidget::SetLayout()
+{
     setFixedSize(300, 200);
     keyPadLayout = new QGridLayout();
     keyPadLayout->setSpacing(1);
@@ -20,14 +26,16 @@ KeypadWidget::KeypadWidget(QWidget *parent) : QWidget(parent)
     for(int i = 0; i < 10; i++){
         KeypadButton* button = new KeypadButton(i);
         keyPadLayout->addWidget(button, i / 3, i % 3);
-        connect(button, SIGNAL(clicked(bool)), this, SLOT(keypadClicked(bool)));
+        connect(button, SIGNAL(clicked(bool)), this, SLOT(DigitClicked(bool)));
     }
     QPushButton* button = new QPushButton("<");
-    connect(button, SIGNAL(clicked(bool)), this, SLOT(cancel(bool)));
+    connect(button, SIGNAL(clicked(bool)), this, SLOT(CancelClicked(bool)));
     keyPadLayout->addWidget(button, 3, 1);
 
     button = new QPushButton("OK");
-    connect(button, SIGNAL(clicked(bool)), this, SLOT(confirm(bool)));
+    connect(button, SIGNAL(clicked(bool)), this, SLOT(ConfirmClicked(bool)));
+    connect(&confirmHighlightTimer, SIGNAL(timeout()), this, SLOT(ConfirmTimeout()));
+    confirmHighlightTimer.setSingleShot(true);
     keyPadLayout->addWidget(button, 3, 2);
 
     passLineEdit = new QLineEdit();
@@ -38,41 +46,39 @@ KeypadWidget::KeypadWidget(QWidget *parent) : QWidget(parent)
     mainLayout->addWidget(passLineEdit);
     mainLayout->addLayout(keyPadLayout);
     mainLayout->addStretch();
-
-    setStyleSheet("QLineEdit, QPushButton {height:40px; font:20px}");
 }
 
-void KeypadWidget::keypadClicked(bool clicked)
+void KeypadWidget::SetStyleSheet()
 {
+    QString style;
+    style += "QLineEdit, QPushButton {height:40px; font:20px}";
+    setStyleSheet(style);
+}
+
+void KeypadWidget::DigitClicked(bool clicked)
+{
+    Q_UNUSED(clicked);
     KeypadButton* key = reinterpret_cast<KeypadButton*>(sender());
-    qDebug() << key->GetKeyNumber();
     passLineEdit->setText(passLineEdit->text() + QString::number(key->GetKeyNumber()));
 }
 
-void KeypadWidget::confirm(bool clicked)
+void KeypadWidget::ConfirmClicked(bool clicked )
 {
-    QUrl myurl;
-    myurl.setScheme("http"); //https also applicable
-    myurl.setHost("192.168.1.2");
-    myurl.setPort(8080);
-    myurl.setPath("/Alarm");
-
-    QNetworkAccessManager *manager = new QNetworkAccessManager();
-    QNetworkRequest request;
-    QNetworkReply *reply = NULL;
-
-    request.setUrl(myurl);
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-
-    QJsonObject jsonObj;
-    jsonObj.insert("id", "wynik");
-    QJsonDocument doc(jsonObj);
-    reply = manager->post(request, doc.toJson());
-    passLineEdit->clear();
+    Q_UNUSED(clicked);
+    if(passLineEdit->text().size() >= 4) {
+        emit CodeEntered(passLineEdit->text());
+        passLineEdit->clear();
+    }
+    else {
+        styleSheet = passLineEdit->styleSheet();
+        passLineEdit->setStyleSheet("QLineEdit {background:red}");
+        confirmHighlightTimer.start(150);
+    }
 }
 
-void KeypadWidget::cancel(bool clicked)
+void KeypadWidget::CancelClicked(bool clicked)
 {
+    Q_UNUSED(clicked);
     QString text = passLineEdit->text();
     if(text.length() > 0)
     {
@@ -91,15 +97,7 @@ void KeypadWidget::paintEvent(QPaintEvent *event)
     QWidget::paintEvent(event);
 }
 
-QByteArray KeypadWidget::createHash(QString pin)
+void KeypadWidget::ConfirmTimeout()
 {
-    QByteArray array;
-    for(int i = 0; i < pin.size(); i++)
-    {
-        array.append(pin.at(i));
-    }
-
-    QCryptographicHash hash(QCryptographicHash::Md4);
-    hash.addData(array);
-    return hash.result();
+    passLineEdit->setStyleSheet(styleSheet);
 }

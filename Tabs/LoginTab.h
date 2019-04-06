@@ -8,6 +8,9 @@
 #include "CustomWidgets/WeatherWidget.h"
 #include <QLabel>
 #include <QTimer>
+#include <QSslError>
+#include <QList>
+#include <QNetworkReply>
 
 class LoginTab : public QWidget
 {
@@ -27,11 +30,15 @@ private:
     WeatherWidget* weatherWidget;
     QTimer timer;
 
+    void SetLayout();
+    void SetStylesheet();
+
 protected:
     void paintEvent(QPaintEvent *event) override;
 
 private slots:
     void timeout();
+    void SendCode(QString code);
 };
 
 #endif // LOGINTAB_H
